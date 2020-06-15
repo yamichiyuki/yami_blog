@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>Windows 的 Zip 文件在 MacOS 下文件名乱码问题</title>
+    <link href="/2020/02/17/3/"/>
+    <url>/2020/02/17/3/</url>
+    
+    <content type="html"><![CDATA[<h3 id="开不了学了！！！"><a href="#开不了学了！！！" class="headerlink" title="开不了学了！！！"></a>开不了学了！！！</h3><p>嘛……突如其来的疫情，现在估计大家都开不了学了，学校已经准备开始上网课了，在接收学校发来的网课文件的时候发现了个严重的问题……<br>解压之后文件名全是乱码！！！记得以前使用 Linux 做主力系统的时候也遇到过这种问题……<br>yami 现在的主力系统是 MacOS ，是基于 Unix 的，系统编码一般默认 UTF-8，和 Linux 一样，然而大多数人用的系统是 Windows ，在中文的 Windows 中默认系统编码是 GB3212，出现这种问题的文件都是 zip 文件…后来从网上查资料知道了原来 zip 没带指定编码格式的头就会是这样……总不能告诉老师用别的工具加个头吧？看起来还是自己解决好了。</p><h3 id="怎么解决呢？"><a href="#怎么解决呢？" class="headerlink" title="怎么解决呢？"></a>怎么解决呢？</h3><p>网上给出的方案大概就几种：  </p><ol><li>安装可以指定解压编码的解压软件</li><li>使用其他压缩格式，rar，7z 等都带了编码头</li><li>使用脚本转换</li></ol><p>第一种……应该是最简单的方案了吧，但感觉自己也不习惯装这些第三方软件，第二种对自己对情况不太现实，那就只能第三种自己转换啦～</p><p>首先尝试用 Python 获取文件名，然后用 UTF8 编码文件名成原始的二进制数据，使用 GBK 解码数据，输出文件名到控制台……结果失败了？！<br>提示无法用 GBK 解码，那难道是 gb2312，也不行……好奇怪。</p><p>继续查资料，发现 MacOS 遇到不能识别的文件名会用 ISO8859-1 来显示的<br>好，那第一步用 ISO8859-1 来编码……可是为什么出来还是乱码？</p><p>继续翻找资料，终于找到了原因，MacOS 下，UTF8 编码使用的是 规范C……这种要先用 <code>unicodedata.normalize(&#39;NFC&#39;,str)</code> 解析成正常的 unicode 字符串……<br>加入了这个之后总算是能正常输出文件名了。想了想万一以后还会遇到其他不是 gb2312 的编码呢？<br>于是又加了 <code>chardet.detect()</code> 来识别编码格式，使用识别出来的进行解码，代码就变成了这个样子。</p><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PYTHON"><pre n><code class="python">#!/usr/env/python3# -*- coding: utf-8 -*-import osimport sysimport unicodedataimport chardetdef cf(s):    c=unicodedata.normalize(&#39;NFC&#39;,s)  #应用规范C格式    iso=c.encode(&#39;iso8859-1&#39;)         #使用 iso8859-1 编码    code=chardet.detect(iso)          #尝试推测字符串编码    return iso.decode(code[&#39;encoding&#39;]) #使用推测编码进行解码if __name__ == &quot;__main__&quot;:    name=os.path.dirname(sys.argv[1])+os.sep+cf(os.path.basename(sys.argv[1]))    print(name)    if(os.path.exists(sys.argv[1])):        os.rename(sys.argv[1],name)</code></pre></div><h3 id="添加到-Finder-服务"><a href="#添加到-Finder-服务" class="headerlink" title="添加到 Finder 服务"></a>添加到 Finder 服务</h3><p>每次都自己运行脚本也不是很方便，好在 MacOS 有 Automator ，使用这个来把脚本添加到 Finder 的右键功能里。<br>新建一个工作流程，按下图设置即可，其中的 <code>/usr/local/bin/python3 ~/app/automator/gbkrename.py $i</code> 要根据自己的环境来修改。</p><p><img src="1.png" srcset="/img/loading.gif" alt="img"></p><p>保存好之后呢，就可以在文件上右键 -&gt; 服务 -&gt; 修复文件名，也支持多选来修复。</p><h3 id="关于-MacOS-压缩文件在-Windows-下的情况"><a href="#关于-MacOS-压缩文件在-Windows-下的情况" class="headerlink" title="关于 MacOS 压缩文件在 Windows 下的情况"></a>关于 MacOS 压缩文件在 Windows 下的情况</h3><p>是一样的！！<br>也一样会乱码……所以为了尽量不给 Windows 用户添麻烦，请使用 7z 或使用 keka 来压缩 zip 这样在 Windows 下就不会出现乱码问题。</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>技术</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>MacOS</tag>
+      
+      <tag>Windows</tag>
+      
+      <tag>乱码</tag>
+      
+      <tag>UTF8</tag>
+      
+      <tag>编码</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>给博客添加好看的代码块</title>
+    <link href="/2019/12/04/2/"/>
+    <url>/2019/12/04/2/</url>
+    
+    <content type="html"><![CDATA[<h3 id="代码可能写的不好但一定要看起来高大上"><a href="#代码可能写的不好但一定要看起来高大上" class="headerlink" title="代码可能写的不好但一定要看起来高大上"></a>代码可能写的不好但一定要看起来高大上</h3><p>既然可能会写一些技术类的文章，怎么能少的了代码呢？<br>Fluid 自带的代码格式化样式感觉不是很满意……以前见过一个仿 MacOS 的代码块样式很好看，于是就打算改造一下这个主题。<br>先来看一下效果吧～  </p><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><pre n><code class="JAVA">public static void main(String args[]){    String str=&quot;Java Hello&quot;;    System.out.println(str);} </code></pre></div><p>这种才看起来比较舒服嘛～  </p><h3 id="怎么做呢？"><a href="#怎么做呢？" class="headerlink" title="怎么做呢？"></a>怎么做呢？</h3><p>其实原理很简单……首先要先知道代码块渲染的过程，就好说多啦。  </p><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><pre n><code>在 MarkDown 文件中，代码大家一般都用下面这个方式来写``` Program Language    CODE```Hexo 的 MarkDown 渲染器遇到这个格式的时候呢，就会把它渲染成这种 HTML&lt;pre&gt;    &lt;code class=&quot;Program Language&quot;&gt;CODE&lt;/code&gt;&lt;/pre&gt;然后再由你使用的代码高亮工具将 &lt;code&gt; 块里的代码加入高亮。</code></pre></div><p>那么我们需要做的就是把它高亮好的 HTML 或者高亮之前的 HTML 进行一下修改，主要就是去查找 <code>&lt;pre&gt;</code> 这个标签来确定代码块的位置，还有 <code>&lt;code&gt;</code> 标签的 <code>class</code> 属性来确定是什么语言。找到之后呢在外面套上自己写的样式就好啦。<br>yami 的样式是用的网上的呢，参考了别人的代码，根据 Fluid 的样式做了修改。</p><h3 id="CSS-部分"><a href="#CSS-部分" class="headerlink" title="CSS 部分"></a>CSS 部分</h3><p>CSS 代码要放在 <code>fluid/source/css/_pages/post/post.styl</code> 里面，不过这边为了不大幅修改已有文件，就在同目录下新建了一个 <code>codeblock.styl</code> 文件，然后在 <code>post.styl</code> 开头加入 <code>@require &quot;codeblock&quot;</code>  </p><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="CSS"><pre n><code class="CSS">.highlight-wrap[data-rel] {  position: relative;  overflow: hidden;  border-radius: 5px;  /*box-shadow: 0 10px 30px 0px rgba(0, 0, 0, 0.4);*/  box-shadow:18px 18px 15px 0px rgba(0,0,0,.4);  margin: 35px 0;  /* margin-top: 10px;  margin-bottom: 25px; */  ::-webkit-scrollbar {    height: 10px;  }  ::-webkit-scrollbar-track {    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);    border-radius: 10px;  }  ::-webkit-scrollbar-thumb {    border-radius: 10px;    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);  }  &amp;::before {    content: attr(data-rel);    height: 38px;    line-height: 38px;    background: #21252b;    /*background: #108414de;*/    color: #fff;    font-size: 16px;    /*position: absolute;*/    top: 0;    left: 0;    width: 100%;    /*font-family: &#39;Source Sans Pro&#39;, sans-serif;*/    font-weight: bold;    padding: 0px 80px;    text-indent: 15px;    float: left;  }  &amp;::after {    content: &#39; &#39;;    position: absolute;    -webkit-border-radius: 50%;    border-radius: 50%;    background: #fc625d;    width: 12px;    height: 12px;    top: 0;    left: 20px;    margin-top: 13px;    -webkit-box-shadow: 20px 0px #fdbc40, 40px 0px #35cd4b;    box-shadow: 20px 0px #fdbc40, 40px 0px #35cd4b;    z-index: 3;  }}.markdown-body  pre    border-radius: 0px;    margin:0px;</code></pre></div><h3 id="JavaScript-部分"><a href="#JavaScript-部分" class="headerlink" title="JavaScript 部分"></a>JavaScript 部分</h3><p>我们需要写一个 js 文件放在 <code>fluid/scripts/codeblock.js</code> 名字随便起就可以了，代码如下。<br>根据 Hexo 主题编写的文档所有放在 scripts 文件夹中的文件都会被自动加载，所以也不用修改其他的部分。</p><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><pre n><code class="JavaScript">var attributes = [    &#39;autocomplete=&quot;off&quot;&#39;,    &#39;autocorrect=&quot;off&quot;&#39;,    &#39;autocapitalize=&quot;off&quot;&#39;,    &#39;spellcheck=&quot;false&quot;&#39;,    &#39;contenteditable=&quot;true&quot;&#39;]var attributesStr = attributes.join(&#39; &#39;)hexo.extend.filter.register(&#39;after_post_render&#39;, function (data) {   //在渲染 HTML 之后执行操作  //查找页面里所有的符合条件的 pre 标签  let x =/&lt;pre&gt;&lt;code(?: class=&quot;([a-zA-Z]*?)&quot;)?&gt;.*?&lt;\/code&gt;&lt;\/pre&gt;/s      while (x.test(data.content)) {        data.content = data.content.replace(x, function () {          var language = RegExp.$1 || &#39;plain&#39;      //如果没有 class 属性则默认为 plain          var lastMatch = RegExp.lastMatch          //将替换过的标签加入 n 属性做标记，防止重复替换          lastMatch = lastMatch.replace(/&lt;pre&gt;&lt;code/, &#39;&lt;pre n&gt;&lt;code&#39;)          //用 div 标签把 pre 包裹起来，并在 div 上应用上面写的 CSS 样式           return &#39;&lt;div class=&quot;highlight-wrap&quot;&#39; + attributesStr + &#39;data-rel=&quot;&#39; + language.toUpperCase() + &#39;&quot;&gt;&#39; + lastMatch + &#39;&lt;/div&gt;&#39;        })      }    return data})</code></pre></div><p>然后重新用 hexo 渲染就可以看到新的代码块样式啦，还可以根据自己的需求进行一些微调。</p><hr><p>参考链接：<a href="https://blog.csdn.net/qq_42889280/article/details/103087315" target="_blank" rel="noopener">CSDN</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>技术</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Hexo</tag>
+      
+      <tag>Fluid</tag>
+      
+      <tag>CSS</tag>
+      
+      <tag>代码块</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>第一篇～</title>
+    <link href="/2019/11/22/1/"/>
+    <url>/2019/11/22/1/</url>
+    
+    <content type="html"><![CDATA[<h3 id="喵喵喵！"><a href="#喵喵喵！" class="headerlink" title="喵喵喵！"></a>喵喵喵！</h3><p>终于配置好自己的 blog 啦～第一篇也不知道该写些什么……<br>虽然配置过程中遇到了不少的问题，但也还是都解决了。<br>没想到 hexo 已经不支持 <code>npm</code> 了，坑了半天，换了 <code>yarn</code> 马上就好了……还以为是 <code>npm</code> 的版本问题<br>这次主题选用了 Fluid ，稍稍修改了下主题色什么的，也没做太大的改动，修改了代码的显示格式（后面可能会写一下怎么做的）<br>这个主题可能对流量党有点不友好 233333，图太多啦～</p><p>之前也有一些地方用来记录自己的东西，但还是想自己建一个 blog ，虽然以前在服务器上建过，但感觉使用起来不是很方便，后来想了想还是放在 Github Page 吧。<br>这样也浏览者没有什么被追踪的顾虑，也不用担心服务器的防护一类的。</p><p>嘛，还请大家以后多多关照啦。</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>日常</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>日记</tag>
+      
+      <tag>Hexo</tag>
+      
+      <tag>Fluid</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  
+</search>
